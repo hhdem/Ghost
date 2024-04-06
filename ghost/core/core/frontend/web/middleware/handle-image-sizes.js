@@ -25,7 +25,7 @@ module.exports = function handleImageSizes(req, res, next) {
     }
 
     const requestedDimension = req.url.match(SIZE_PATH_REGEX)[1];
-
+    
     // Note that we don't use sizeImageDir because we need to keep the trailing slash
     let imagePath = req.url.replace(`/size/${requestedDimension}`, '');
 
@@ -61,8 +61,8 @@ module.exports = function handleImageSizes(req, res, next) {
     const internalImageSizes = config.get('imageOptimization:internalImageSizes');
     const themeImageSizes = activeTheme.get().config('image_sizes');
     const imageSizes = _.merge({}, themeImageSizes, internalImageSizes, contentImageSizes);
-
-    // build a new object with keys that match the strings used in size paths like "w640h480"
+    
+    // build a new object with keys that match the strings used in size paths like "w640h480" or the abstracted key like "thumbnail"
     const imageDimensions = {};
     Object.keys(imageSizes).forEach((size) => {
         const {width, height} = imageSizes[size];
@@ -71,6 +71,10 @@ module.exports = function handleImageSizes(req, res, next) {
         // if there are duplicate size names the first encountered wins
         if (!imageDimensions[dimension]) {
             imageDimensions[dimension] = imageSizes[size];
+        }
+
+        if (!imageDimensions[size]) {
+            imageDimensions[size] = imageSizes[size];
         }
     });
 
