@@ -142,5 +142,21 @@ module.exports = [
             update: ['user.activated.edited', 'user.attached', 'user.detached'],
             remove: 'user.deleted'
         }
+    },
+    {
+        type: 'files',
+        modelOptions: {
+            modelName: 'File',
+            exclude: [],
+            shouldHavePosts: {
+                joinTo: 'file_id',
+                joinTable: 'posts_files'
+            }
+        },
+        events: {
+            add: 'file.activated',
+            update: ['file.activated.edited', 'file.attached', 'file.detached'],
+            remove: 'file.deleted'
+        }
     }
 ];

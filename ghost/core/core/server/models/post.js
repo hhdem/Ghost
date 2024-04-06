@@ -99,8 +99,8 @@ Post = ghostBookshelf.Model.extend({
             show_title_and_feature_image: true
         };
     },
-
-    relationships: ['tags', 'authors', 'mobiledoc_revisions', 'post_revisions', 'posts_meta', 'tiers'],
+    
+    relationships: ['tags', 'authors', 'mobiledoc_revisions', 'post_revisions', 'posts_meta', 'tiers', 'files'],
     relationshipConfig: {
         tags: {
             editable: true
@@ -116,6 +116,9 @@ Post = ghostBookshelf.Model.extend({
         },
         posts_meta: {
             editable: true
+        },
+        files: {
+            editable: true
         }
     },
 
@@ -124,7 +127,8 @@ Post = ghostBookshelf.Model.extend({
         tags: 'tags',
         tiers: 'products',
         authors: 'users',
-        posts_meta: 'posts_meta'
+        posts_meta: 'posts_meta',
+        files: 'files'
     },
 
     relationsMeta: {
@@ -350,6 +354,13 @@ Post = ghostBookshelf.Model.extend({
                 tableName: 'post_revisions',
                 type: 'oneToMany',
                 joinFrom: 'post_id'
+            },
+            files: {
+                tableName: 'files',
+                type: 'manyToMany',
+                joinTable: 'posts_files',
+                joinFrom: 'post_id',
+                joinTo: 'file_id'
             }
         };
     },
@@ -576,6 +587,22 @@ Post = ghostBookshelf.Model.extend({
                 authors.forEach(author => author.emitChange('attached', options));
             });
         });
+
+        model.related('files').once('detaching', function detachingTags(collection, file) {
+            model.related('files').once('detached', function detachedTags(detachedCollection, response, options) {
+                file.emitChange('detached', options);
+                model.emitChange('file.detached', options);
+            });
+        });
+
+        model.related('files').once('attaching', function filesAttaching(collection, files) {
+            model.related('files').once('attached', function filesAttached(detachedCollection, response, options) {
+                files.forEach((file) => {
+                    file.emitChange('attached', options);
+                    model.emitChange('file.attached', options);
+                });
+            });
+        });
     },
 
     /**
@@ -591,6 +618,10 @@ Post = ghostBookshelf.Model.extend({
 
         model.related('authors').forEach((author) => {
             author.emitChange('attached', options);
+        });
+
+        model.related('files').forEach((file) => {
+            file.emitChange('attached', options);
         });
     },
 
@@ -1052,6 +1083,10 @@ Post = ghostBookshelf.Model.extend({
             .query('orderBy', 'sort_order', 'ASC');
     },
 
+    files: function files() {
+        return this.belongsToMany('File', 'posts_files', 'post_id', 'file_id');
+    },
+
     mobiledoc_revisions() {
         return this.hasMany('MobiledocRevision', 'post_id');
     },
@@ -1261,7 +1296,7 @@ Post = ghostBookshelf.Model.extend({
             findOne: ['columns', 'importing', 'withRelated', 'require', 'filter'],
             findPage: ['status'],
 
-            findAll: ['columns', 'filter'],
+            findAll: ['columns', 'filter', 'where'],
             destroy: ['destroyAll', 'destroyBy'],
             edit: ['filter', 'email_segment', 'force_rerender', 'newsletter', 'save_revision', 'convert_to_lexical']
         };
@@ -1286,7 +1321,7 @@ Post = ghostBookshelf.Model.extend({
      */
     defaultRelations: function defaultRelations(methodName, options) {
         if (['edit', 'add', 'destroy'].indexOf(methodName) !== -1) {
-            options.withRelated = _.union(['authors', 'tags', 'post_revisions', 'post_revisions.author'], options.withRelated || []);
+            options.withRelated = _.union(['authors', 'tags', 'post_revisions', 'post_revisions.author', 'files'], options.withRelated || []);
         }
 
         const META_ATTRIBUTES = _.without(ghostBookshelf.model('PostsMeta').prototype.permittedAttributes(), 'id', 'post_id');

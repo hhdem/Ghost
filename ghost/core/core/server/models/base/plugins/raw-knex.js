@@ -18,13 +18,14 @@ module.exports = function (Bookshelf) {
         raw_knex: {
             fetchAll: function (options) {
                 options = options || {};
-
+                
                 const nql = require('@tryghost/nql');
                 const modelName = options.modelName;
                 const tableNames = {
                     Post: 'posts',
                     User: 'users',
-                    Tag: 'tags'
+                    Tag: 'tags',
+                    File: 'files'
                 };
                 const exclude = options.exclude;
                 const filter = options.filter;
@@ -55,6 +56,18 @@ module.exports = function (Bookshelf) {
                         whereIn: 'posts_authors.post_id',
                         whereInKey: 'post_id',
                         orderBy: 'sort_order'
+                    },
+                    files: {
+                        targetTable: 'files',
+                        name: 'files',
+                        innerJoin: {
+                            relation: 'posts_files',
+                            condition: ['posts_files.file_id', '=', 'files.id']
+                        },
+                        select: ['posts_files.file_id as file_id', 'files.visibility'],
+                        whereIn: ['posts_files.post_id'],
+                        whereInKey: 'post_id',
+                        orderBy: 'id'
                     }
                 };
 

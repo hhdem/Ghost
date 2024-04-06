@@ -39,7 +39,7 @@ const notImplemented = function notImplemented(req, res, next) {
         config: ['GET'],
         explore: ['GET'],
         schedules: ['PUT'],
-        files: ['POST'],
+        files: ['GET', 'DELETE', 'POST'],
         media: ['POST'],
         db: ['POST'],
         settings: ['GET'],

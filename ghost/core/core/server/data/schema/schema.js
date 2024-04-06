@@ -1096,5 +1096,20 @@ module.exports = {
         recommendation_id: {type: 'string', maxlength: 24, nullable: false, references: 'recommendations.id', unique: false, cascadeDelete: true},
         member_id: {type: 'string', maxlength: 24, nullable: true, references: 'members.id', unique: false, setNullDelete: true},
         created_at: {type: 'dateTime', nullable: false}
+    },
+    files: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        name: {type: 'string', maxlength: 2000, nullable: false},
+        type: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'image', validations: {isIn: [['images', 'media', 'files']]}},
+        hash: {type: 'string', maxlength: 64, nullable: true},
+        path: {type: 'string', maxlength: 2000, nullable: false},
+        size: {type: 'integer', nullable: false, unsigned: true, defaultTo: 0},
+        created_at: {type: 'dateTime', nullable: false},
+        updated_at: {type: 'dateTime', nullable: true}
+    },
+    posts_files: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        post_id: {type: 'string', maxlength: 24, nullable: false, references: 'posts.id', cascadeDelete: true},
+        file_id: {type: 'string', maxlength: 24, nullable: false, references: 'files.id', cascadeDelete: true}
     }
 };

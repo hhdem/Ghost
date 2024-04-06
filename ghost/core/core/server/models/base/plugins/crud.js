@@ -44,6 +44,10 @@ module.exports = function (Bookshelf) {
                 });
             }
 
+            if (options.where) {
+                itemCollection.where(options.where);
+            }
+
             const result = await itemCollection.fetchAll(options);
             if (options.withRelated) {
                 _.each(result.models, function each(item) {
