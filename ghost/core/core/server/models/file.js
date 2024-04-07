@@ -47,9 +47,19 @@ File = ghostBookshelf.Model.extend({
         const options = File.filterOptions(unfilteredOptions, 'toJSON');
         const attrs = ghostBookshelf.Model.prototype.toJSON.call(this, options);
         
-        attrs.thumbnail = attrs.type === 'images' 
-            ? attrs.path.replace(/\/content\/images\//, '/content/images/size/thumbnail/')
-            : null;
+        // The thumbnail column is a computed attr which depends on other fields to be present
+        if (
+            !options.columns || (
+                options.columns &&
+                options.columns.includes('thumbnail') &&
+                options.columns.includes('path') &&
+                options.columns.includes('type')
+            )
+        ) {
+            attrs.thumbnail = attrs.type === 'images' 
+                ? attrs.path.replace(/\/content\/images\//, '/content/images/size/thumbnail/')
+                : null;
+        }
 
         return attrs;
     },
