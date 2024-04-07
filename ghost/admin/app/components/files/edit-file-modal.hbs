@@ -1,0 +1,27 @@
+<div class="modal-content" data-test-modal="edit-file">
+    <header class="modal-header flex items-center">
+        <div class="mr5 gh-badge {{if @file.isMedia 'gh-badge-blue'}} {{if @file.isFile 'gh-badge-red'}}">
+            {{@data.file.type}}
+        </div>
+
+        <h1>{{@data.file.name}}</h1>
+    </header>
+
+    <button type="button" class="close" title="Close" {{on "click" @close}}>{{svg-jar "close"}}<span class="hidden">Close</span></button>
+
+    <div class="modal-body">
+        {{#if @data.file.count.posts}}
+            <ol class="posts-list gh-list">
+                {{#each @data.file.posts as |post|}}
+                    <li>
+                        {{post.id}}
+                    </li>
+                {{/each}}
+            </ol>
+        {{/if}}
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="gh-btn" {{on "click" @close}}><span>Close</span></button>
+    </div>
+</div>

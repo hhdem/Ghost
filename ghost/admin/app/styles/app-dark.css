@@ -44,6 +44,7 @@
 @import "components/filter-builder.css";
 @import "components/theme-errors.css";
 @import "components/modal-about.css";
+@import "components/boxes.css";
 
 
 /* Layouts
@@ -66,6 +67,7 @@
 @import "layouts/tiers.css";
 @import "layouts/offers.css";
 @import "layouts/explore.css";
+@import "layouts/files.css";
 
 :root {
     /* Primary colours */
@@ -1359,4 +1361,12 @@ kbd {
 /* Update banner */
 .gh-update-banner {
     background: var(--main-color-content-greybg);
+}
+
+.gh-box-item {
+    border-color: var(--hairline-color-1);
+}
+
+.gh-box-item-header, .gh-box-item-image, .gh-box-item-other {
+    background-color: black;
 }
