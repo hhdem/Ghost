@@ -13,7 +13,9 @@ export default class FilesRoute extends AuthenticatedRoute {
     perPage = 30;
 
     model(params) {
-        const queryParams = {include: 'count.posts,posts', fields: ['posts.id', 'posts.title'], order: 'created_at DESC'};
+        // FIXME: implement the edit modal
+        // const queryParams = {include: 'count.posts,posts', fields: ['posts.id', 'posts.title'], order: 'created_at DESC'};
+        const queryParams = {include: 'count.posts', order: 'created_at DESC'};
         const filterParams = {type: params.type};
         const paginationParams = {
             perPageParam: 'limit',

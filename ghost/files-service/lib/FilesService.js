@@ -4,6 +4,7 @@ const url = require('url');
 const path = require('path');
 const glob = require('glob');
 
+const {compress} = require('@tryghost/zip');
 const imageTransform = require('@tryghost/image-transform');
 const errors = require('@tryghost/errors');
 
@@ -356,6 +357,38 @@ class FilesService {
         }
 
         return await storage.save(frame.file, targetDir);
+    }
+
+    /**
+     * @returns {Promise<Object>}
+     */
+    async exportFiles() {
+        const contentPath = this.config.get('paths').contentPath;
+        const zipFilePath = path.join(contentPath, 'data', 'files.zip');
+        
+        return (req, res, next) => {
+            let stream;
+
+            return compress(contentPath, zipFilePath, {
+                glob: '+(images|media|files)/**/*',
+                type: 'zip',
+                dot: true,
+                ignore: []
+            }).then((result) => {
+                res.set({
+                    'Content-disposition': 'attachment; filename=files.zip',
+                    'Content-Type': 'application/zip',
+                    'Content-Length': result.size
+                });
+    
+                stream = fs.createReadStream(zipFilePath);
+                stream.pipe(res);
+            }).catch((err) => {
+                next(err);
+            }).finally(() => {
+                return fs.remove(zipFilePath);
+            });
+        };
     }
 }
 

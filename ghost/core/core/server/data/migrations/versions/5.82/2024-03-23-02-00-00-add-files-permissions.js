@@ -54,5 +54,12 @@ module.exports = combineTransactionalMigrations(
         'Admin Integration',
         'Editor',
         'Author'
+    ]),
+    addPermissionWithRoles({
+        name: 'Export files',
+        action: 'exportFiles',
+        object: 'file'
+    }, [
+        'Administrator'
     ])
 );

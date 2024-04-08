@@ -1,17 +1,30 @@
 const getFileServiceInstance = require('../../services/files/files-service');
 
-const ALLOWED_INCLUDES = ['posts', 'count.posts'];
+// FIXME: implement the edit modal
+// const ALLOWED_INCLUDES = ['posts', 'count.posts'];
+const ALLOWED_INCLUDES = ['count.posts'];
 
 const filesService = getFileServiceInstance();
 
 module.exports = {
     docName: 'files',
+
+    exportFiles: {
+        headers: {
+            cacheInvalidate: false
+        },
+        permissions: true,
+        async query() {
+            return await filesService.exportFiles();
+        }
+    },
+    
     upload: {
         statusCode: 201,
         headers: {
             cacheInvalidate: false
         },
-        permissions: false,
+        permissions: true,
         async query(frame) {
             return filesService.uploadFile(frame);
         }

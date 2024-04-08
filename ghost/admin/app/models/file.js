@@ -15,7 +15,9 @@ export default Model.extend(ValidationEngine, {
     updatedAtUTC: attr('moment-utc'),
 
     count: attr('raw'),
-    posts: attr('raw'), // We do not load all fields from posts, so we use them as a json obj here
+
+    // FIXME: implement the edit modal
+    // posts: attr('raw'), // We do not load all fields from posts, so we use them as a json obj here
 
     thumbnail: attr('string'), // available for images
 
