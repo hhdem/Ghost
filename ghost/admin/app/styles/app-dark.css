@@ -1367,6 +1367,6 @@ kbd {
     border-color: var(--hairline-color-1);
 }
 
-.gh-box-item-header, .gh-box-item-image, .gh-box-item-other {
+.gh-box-item-image, .gh-box-item-other {
     background-color: black;
 }
