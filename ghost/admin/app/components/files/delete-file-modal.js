@@ -13,9 +13,11 @@ export default class DeleteFileModal extends Component {
             if (file.isDeleted) {
                 return true;
             }
-
-            yield file.destroyRecord();
-            this.args.data.afterDelete?.();
+            
+            // Using ".then" here to make sure the callback is called, even when the method is not yielded
+            yield file.destroyRecord().then(() => {
+                this.args.data.afterDelete?.();
+            });
 
             this.notifications.closeAlerts('post.delete');
 
