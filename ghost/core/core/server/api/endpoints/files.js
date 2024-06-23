@@ -6,7 +6,8 @@ const ALLOWED_INCLUDES = ['count.posts'];
 
 const filesService = getFileServiceInstance();
 
-module.exports = {
+/** @type {import('@tryghost/api-framework').Controller} */
+const controller = {
     docName: 'files',
 
     exportFiles: {
@@ -70,3 +71,5 @@ module.exports = {
         }
     }
 };
+
+module.exports = controller;

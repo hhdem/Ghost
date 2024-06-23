@@ -104,8 +104,12 @@ module.exports = class MemberRepository {
             // Only dispatch the event after the transaction has finished
             options.transacting.executionPromise.then(async () => {
                 DomainEvents.dispatch(event);
-            }).catch(() => {
+            }).catch((err) => {
                 // catches transaction errors/rollback to not dispatch event
+                logging.error({
+                    err,
+                    message: `Error dispatching event ${event.constructor.name} for member ${event.data.memberId} after transaction finished`
+                });
             });
         } else {
             DomainEvents.dispatch(event);
@@ -548,6 +552,14 @@ module.exports = class MemberRepository {
 
         for (const productId of productsToAdd) {
             const product = await this._productRepository.get({id: productId}, sharedOptions);
+            if (!product) {
+                throw new errors.BadRequestError({
+                    message: tpl(messages.productNotFound, {
+                        id: productId
+                    })
+                });
+            }
+
             if (product.get('active') !== true) {
                 throw new errors.BadRequestError({message: tpl(messages.tierArchived)});
             }
@@ -1126,6 +1138,11 @@ module.exports = class MemberRepository {
                 attribution: data.attribution,
                 batchId: options.batch_id
             });
+
+            if (offerId) {
+                logging.info(`Dispatching ${event.constructor.name} for member ${member.id} with offer ${offerId}`);
+            }
+
             this.dispatchEvent(event, options);
 
             if (getStatus(subscriptionModel) === 'active') {

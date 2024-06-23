@@ -61,13 +61,6 @@ describe('StripeAPI', function () {
             should.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.cancel_url);
         });
 
-        it('createCheckoutSetupSession sends success_url and cancel_url', async function () {
-            await api.createCheckoutSetupSession('priceId', {});
-
-            should.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.success_url);
-            should.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.cancel_url);
-        });
-
         it('sets valid trialDays', async function () {
             await api.createCheckoutSession('priceId', null, {
                 trialDays: 12
@@ -159,6 +152,53 @@ describe('StripeAPI', function () {
             should.not.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.customer_email);
             should.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.customer);
             should.equal(mockStripe.checkout.sessions.create.firstCall.firstArg.customer, 'cust_mock_123456');
+        });
+    });
+
+    describe('createCheckoutSetupSession', function () {
+        beforeEach(function () {
+            mockStripe = {
+                checkout: {
+                    sessions: {
+                        create: sinon.stub().resolves()
+                    }
+                }
+            };
+            sinon.stub(mockLabs, 'isSet');
+            const mockStripeConstructor = sinon.stub().returns(mockStripe);
+            StripeAPI.__set__('Stripe', mockStripeConstructor);
+            api.configure({
+                checkoutSessionSuccessUrl: '/success',
+                checkoutSessionCancelUrl: '/cancel',
+                checkoutSetupSessionSuccessUrl: '/setup-success',
+                checkoutSetupSessionCancelUrl: '/setup-cancel',
+                secretKey: ''
+            });
+        });
+
+        afterEach(function () {
+            sinon.restore();
+        });
+
+        it('createCheckoutSetupSession sends success_url and cancel_url', async function () {
+            await api.createCheckoutSetupSession('priceId', {});
+
+            should.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.success_url);
+            should.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.cancel_url);
+        });
+
+        it('createCheckoutSetupSession does not send currency if additionalPaymentMethods flag is off', async function () {
+            mockLabs.isSet.withArgs('additionalPaymentMethods').returns(false);
+            await api.createCheckoutSetupSession('priceId', {currency: 'usd'});
+
+            should.not.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.currency);
+        });
+
+        it('createCheckoutSetupSession sends currency if additionalPaymentMethods flag is on', async function () {
+            mockLabs.isSet.withArgs('additionalPaymentMethods').returns(true);
+            await api.createCheckoutSetupSession('priceId', {currency: 'usd'});
+
+            should.equal(mockStripe.checkout.sessions.create.firstCall.firstArg.currency, 'usd');
         });
     });
 
@@ -300,6 +340,78 @@ describe('StripeAPI', function () {
             should.deepEqual(mockStripe.subscriptions.update.args[0][1], {trial_end: 'now'});
 
             should.deepEqual(result, mockSubscription);
+        });
+
+        describe('createCheckoutSetupSession automatic tax flag', function () {
+            beforeEach(function () {
+                mockStripe = {
+                    checkout: {
+                        sessions: {
+                            create: sinon.stub().resolves()
+                        }
+                    },
+                    customers: {
+                        create: sinon.stub().resolves()
+                    }
+                };
+                sinon.stub(mockLabs, 'isSet');
+                mockLabs.isSet.withArgs('stripeAutomaticTax').returns(true);
+                const mockStripeConstructor = sinon.stub().returns(mockStripe);
+                StripeAPI.__set__('Stripe', mockStripeConstructor);
+                api.configure({
+                    checkoutSessionSuccessUrl: '/success',
+                    checkoutSessionCancelUrl: '/cancel',
+                    checkoutSetupSessionSuccessUrl: '/setup-success',
+                    checkoutSetupSessionCancelUrl: '/setup-cancel',
+                    secretKey: '',
+                    enableAutomaticTax: true
+                });
+            });
+
+            afterEach(function () {
+                sinon.restore();
+            });
+
+            it('createCheckoutSession adds customer_update if automatic tax flag is enabled and customer is not undefined', async function () {
+                const mockCustomer = {
+                    id: mockCustomerId,
+                    customer_email: mockCustomerEmail,
+                    name: 'Example Customer'
+                };
+
+                await api.createCheckoutSession('priceId', mockCustomer, {
+                    trialDays: null
+                });
+                should.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.customer_update);
+            });
+
+            it('createCheckoutSession does not add customer_update if automatic tax flag is enabled and customer is undefined', async function () {
+                await api.createCheckoutSession('priceId', undefined, {
+                    trialDays: null
+                });
+                should.not.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.customer_update);
+            });
+
+            it('createCheckoutSession does not add customer_update if automatic tax flag is disabled', async function () {
+                const mockCustomer = {
+                    id: mockCustomerId,
+                    customer_email: mockCustomerEmail,
+                    name: 'Example Customer'
+                };
+                // set enableAutomaticTax: false
+                api.configure({
+                    checkoutSessionSuccessUrl: '/success',
+                    checkoutSessionCancelUrl: '/cancel',
+                    checkoutSetupSessionSuccessUrl: '/setup-success',
+                    checkoutSetupSessionCancelUrl: '/setup-cancel',
+                    secretKey: '',
+                    enableAutomaticTax: false
+                });
+                await api.createCheckoutSession('priceId', mockCustomer, {
+                    trialDays: null
+                });
+                should.not.exist(mockStripe.checkout.sessions.create.firstCall.firstArg.customer_update);
+            });
         });
     });
 });

@@ -2,7 +2,8 @@ const getFileServiceInstance = require('../../services/files/files-service');
 
 const filesService = getFileServiceInstance();
 
-module.exports = {
+/** @type {import('@tryghost/api-framework').Controller} */
+const controller = {
     docName: 'media',
 
     upload: {
@@ -30,3 +31,5 @@ module.exports = {
         }
     }
 };
+
+module.exports = controller;

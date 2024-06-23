@@ -2,7 +2,8 @@ const getFileServiceInstance = require('../../services/files/files-service');
 
 const filesService = getFileServiceInstance();
 
-module.exports = {
+/** @type {import('@tryghost/api-framework').Controller} */
+const controller = {
     docName: 'images',
     upload: {
         statusCode: 201,
@@ -15,3 +16,5 @@ module.exports = {
         }
     }
 };
+
+module.exports = controller;

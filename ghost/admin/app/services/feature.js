@@ -80,9 +80,10 @@ export default class FeatureService extends Service {
     @feature('filterEmailDisabled') filterEmailDisabled;
     @feature('adminXDemo') adminXDemo;
     @feature('portalImprovements') portalImprovements;
-    @feature('onboardingChecklist') onboardingChecklist;
-    @feature('membersSpamPrevention') membersSpamPrevention;
+    @feature('ActivityPub') ActivityPub;
     @feature('internalLinking') internalLinking;
+    @feature('editorExcerpt') editorExcerpt;
+    @feature('newsletterExcerpt') newsletterExcerpt;
 
     _user = null;
 

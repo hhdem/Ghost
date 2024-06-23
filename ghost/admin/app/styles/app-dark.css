@@ -55,6 +55,7 @@
 @import "layouts/content.css";
 @import "layouts/editor.css";
 @import "layouts/whatsnew.css";
+@import "layouts/whatsnew-modal.css";
 @import "layouts/tags.css";
 @import "layouts/members.css";
 @import "layouts/member-activity.css";
@@ -745,6 +746,11 @@ input:focus,
 
 /* Editor  */
 
+.gh-editor-title,
+.gh-editor-excerpt {
+    background: var(--white);
+}
+
 .gh-editor-title::placeholder {
     color: var(--midlightgrey-d2);
 }
@@ -1031,6 +1037,10 @@ input:focus,
 
 .gh-notification {
     background: var(--lightgrey);
+}
+
+.gh-notification-close:hover svg {
+    stroke: #FFF;
 }
 
 /* Opacity needed to display correctly in Safari */
@@ -1417,12 +1427,16 @@ Onboarding checklist: Share publication modal */
     opacity: .8;
 }
 
-.gh-share-links li a { 
+.gh-share-links li a {
     border: 1px solid #394047;
 }
 
 .gh-share-links li a:hover {
     background: #394047;
+}
+
+.gh-sidebar-banner.gh-error-banner {
+    background: var(--lightgrey-d1);
 }
 
 .gh-box-item {

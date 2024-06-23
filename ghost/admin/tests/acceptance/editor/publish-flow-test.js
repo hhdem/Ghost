@@ -51,6 +51,18 @@ describe('Acceptance: Publish flow', function () {
         expect(find('[data-test-modal="publish-flow"]'), 'publish flow modal').to.not.exist;
     });
 
+    it('populates search index when opening', async function () {
+        await loginAsRole('Administrator', this.server);
+
+        const search = this.owner.lookup('service:search');
+        expect(search.isContentStale).to.be.true;
+
+        const post = this.server.create('post', {status: 'draft'});
+        await visit(`/editor/post/${post.id}`);
+
+        expect(search.isContentStale).to.be.false;
+    });
+
     it('handles timezones correctly when scheduling');
 
     // email unavailable state occurs when
@@ -113,7 +125,7 @@ describe('Acceptance: Publish flow', function () {
         expect(find('[data-test-button="publish-flow-preview"]'), 'preview button on complete step').to.not.exist;
         expect(find('[data-test-button="publish-flow-publish"]'), 'publish button on complete step').to.not.exist;
 
-        await click('[data-test-button="back-to-editor"]');
+        await click('[data-test-button="close-publish-flow"]');
 
         expect(find('[data-test-button="publish-flow"]'), 'publish button after publishing').to.not.exist;
         expect(find('[data-test-button="update-flow"]'), 'update button after publishing').to.exist;
@@ -611,5 +623,78 @@ describe('Acceptance: Publish flow', function () {
 
         it('handles server error when confirming');
         it('handles email sending error');
+    });
+
+    describe('Are you sure you want to leave? modal', function () {
+        // draft content should autosave and leave without warning
+        it(`Doesn't display for draft content`, async function () {
+            await loginAsRole('Administrator', this.server);
+            const post = this.server.create('post', {
+                title: 'Test Post',
+                status: 'draft'
+            });
+            await visit('/editor/post/' + post.id);
+            await fillIn('[data-test-editor-title-input]', 'New Title');
+            await click('[data-test-link="posts"]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.not.exist;
+        });
+        // published content should never autosave and should warn on leaving when there's changes
+        it('Displays when published content title has changed', async function () {
+            await loginAsRole('Administrator', this.server);
+            const post = this.server.create('post', {
+                title: 'Test Post',
+                status: 'published'
+            });
+            await visit('/editor/post/' + post.id);
+            await fillIn('[data-test-editor-title-input]', 'New Title');
+            await click('[data-test-link="posts"]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.exist;
+        });
+        it('Displays when scheduled content has changed', async function () {
+            await loginAsRole('Administrator', this.server);
+            const post = this.server.create('post', {
+                title: 'Test Post',
+                status: 'scheduled'
+            });
+            await visit('/editor/post/' + post.id);
+            await fillIn('[data-test-editor-title-input]', 'New Title');
+            await click('[data-test-link="posts"]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.exist;
+        });
+        // published and edited content should not warn when changes are reverted (either via undo or manually)
+        it(`Does not display when changed content is changed back`, async function () {
+            await loginAsRole('Administrator', this.server);
+            const post = this.server.create('post', {
+                title: 'Test Post',
+                status: 'published',
+                lexical: `{"root":{"children":[{"children": [{"detail": 0,"format": 0,"mode": "normal","style": "","text": "Sample content","type": "extended-text","version": 1}],"direction": "ltr","format": "","indent": 0,"type": "paragraph","version": 1}],"direction": "ltr","format": "","indent": 0,"type": "root","version": 1}}`
+            });
+            await visit('/editor/post/' + post.id);
+            await fillIn('[data-test-editor-title-input]', 'New Title');
+            await click('[data-test-link="posts"]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.exist;
+            await click('[data-test-stay-button]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.not.exist;
+            // revert title
+            await fillIn('[data-test-editor-title-input]', 'Test Post');
+            await click('[data-test-link="posts"]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.not.exist;
+        });
+        it(`Does not save changes when leaving`, async function () {
+            await loginAsRole('Administrator', this.server);
+            const post = this.server.create('post', {
+                title: 'Test Post',
+                status: 'published',
+                lexical: `{"root":{"children":[{"children": [{"detail": 0,"format": 0,"mode": "normal","style": "","text": "Sample content","type": "extended-text","version": 1}],"direction": "ltr","format": "","indent": 0,"type": "paragraph","version": 1}],"direction": "ltr","format": "","indent": 0,"type": "root","version": 1}}`
+            });
+            await visit('/editor/post/' + post.id);
+            await fillIn('[data-test-editor-title-input]', 'New Title');
+            await click('[data-test-link="posts"]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.exist;
+            await click('[data-test-leave-button]');
+            expect(find('[data-test-modal="unsaved-post-changes"]'), 'unsaved changes modal').to.not.exist;
+            // check that the title wasn't saved
+            expect(this.server.db.posts.find(post.id).title === 'Test Post').to.be.true;
+        });
     });
 });
