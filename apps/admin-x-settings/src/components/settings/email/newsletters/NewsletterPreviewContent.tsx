@@ -289,7 +289,7 @@ const NewsletterPreviewContent: React.FC<{
                                     <div className="flex flex-col items-center pb-[40px] pt-[10px]">
                                         <a className="pointer-events-none inline-flex cursor-auto items-center px-2 py-1 text-[1.25rem] font-semibold tracking-tight text-grey-900" href="https://ghost.org">
                                             <GhostOrb className="mr-[6px] h-4 w-4"/>
-                                            <span>Powered by Ghost</span>
+                                            <span>Build with ❤ Love</span>
                                         </a>
                                     </div>
                                 )}
