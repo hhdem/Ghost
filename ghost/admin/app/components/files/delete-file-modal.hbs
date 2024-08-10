@@ -1,0 +1,25 @@
+<div class="modal-content" {{on-key "Enter" (perform this.deleteFileTask)}} data-test-modal="confirm-delete-file">
+    <header class="modal-header">
+        <h1>Are you sure you want to delete this file?</h1>
+    </header>
+
+    <button type="button" class="close" title="Close" {{on "click" @close}}>{{svg-jar "close"}}<span class="hidden">Close</span></button>
+
+    <div class="modal-body">
+        {{#if @data.file.count.posts}}
+            <span class="red">This file is attached to <span data-test-text="posts-count">{{gh-pluralize @data.file.count.posts "post"}}</span>.</span>
+        {{/if}}
+        You're about to delete "<strong>{{@data.file.name}}</strong>". This is permanent! We warned you, k?
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="gh-btn" {{on "click" @close}}><span>Cancel</span></button>
+
+        <GhTaskButton
+            @buttonText="Delete"
+            @successText="Deleted"
+            @task={{this.deleteFileTask}}
+            @class="gh-btn gh-btn-red gh-btn-icon"
+        />
+    </div>
+</div>

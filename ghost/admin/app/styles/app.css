@@ -46,6 +46,7 @@
 @import "components/pintura.css";
 @import "components/theme-errors.css";
 @import "components/modal-about.css";
+@import "components/boxes.css";
 
 
 /* Layouts
@@ -72,7 +73,7 @@
 @import "layouts/explore.css";
 @import "layouts/mentions.css";
 @import "layouts/migrate.css";
-
+@import "layouts/files.css";
 
 /* ---------------------------✈️----------------------------- */
 /* I COMMITTED THIS COMMENT FROM A PLANE: http://bit.ly/2on5pmq

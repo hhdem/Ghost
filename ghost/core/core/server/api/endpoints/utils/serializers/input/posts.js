@@ -88,11 +88,18 @@ function defaultRelations(frame) {
         return false;
     }
 
-    frame.options.withRelated = ['tags', 'authors', 'authors.roles', 'email', 'tiers', 'newsletter', 'count.clicks'];
+    frame.options.withRelated = ['tags', 'authors', 'authors.roles', 'email', 'tiers', 'newsletter', 'count.clicks', 'files'];
 }
 
 function setDefaultOrder(frame) {
-    if (!frame.options.order && frame.options.filter) {
+    let includesOrderedRelations = false;
+
+    if (frame.options.withRelated) {
+        const orderedRelations = ['author', 'authors', 'tag', 'tags', 'files'];
+        includesOrderedRelations = _.intersection(orderedRelations, frame.options.withRelated).length > 0;
+    }
+
+    if (!frame.options.order && !includesOrderedRelations && frame.options.filter) {
         frame.options.autoOrder = slugFilterOrder('posts', frame.options.filter);
     }
 
@@ -273,6 +280,18 @@ module.exports = {
                     };
                 } else {
                     frame.data.posts[0].tags[index] = clean.postsTag(tag);
+                }
+            });
+        }
+
+        if (frame.data.posts[0].files) {
+            frame.data.posts[0].files.forEach((file, index) => {
+                if (_.isString(file)) {
+                    frame.data.posts[0].files[index] = {
+                        path: file
+                    };
+                } else {
+                    frame.data.posts[0].files[index] = clean.postsFile(file);
                 }
             });
         }

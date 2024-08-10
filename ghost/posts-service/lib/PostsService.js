@@ -38,6 +38,48 @@ class PostsService {
 
     /**
      *
+     * @param {string | object | null} lexicalValue
+     * @returns {Array<object>} // Example: [ { path: '/content/images/2024/03/example.jpg', type: 'image' } ]
+     */
+    static getFileDetailsFromLexical(lexicalValue) {
+        if (lexicalValue === null || lexicalValue === '') {
+            return [];
+        } else {
+            const lexical = typeof lexicalValue === 'string' ? JSON.parse(lexicalValue) : lexicalValue;
+
+            // Capture the related files, which can be single image, a list of images from gallery or other types of files
+            const fileDetails = lexical.root.children
+                .filter(child => ['image', 'gallery', 'audio', 'video', 'file'].includes(child.type))
+                .map((child) => {
+                    if (child.type === 'gallery') {
+                        // Include the type in the gallery images as it is set on the parent only
+                        return child.images.map(image => ({...image, type: child.type}));
+                    } else {
+                        return child;
+                    }
+                })
+                .flat()
+                .filter(file => file.src)
+                .map((file) => {
+                    if (file.src.startsWith('http')) {
+                        return {
+                            path: new URL(file.src).pathname,
+                            type: file.type
+                        };
+                    } else {
+                        return {
+                            path: file.src.replace('__GHOST_URL__', ''),
+                            type: file.type
+                        };
+                    }
+                });
+                
+            return fileDetails;
+        }
+    }
+
+    /**
+     *
      * @param {Object} options - frame options
      * @returns {Promise<Object>}
      */
@@ -178,7 +220,18 @@ class PostsService {
             }
         }
 
-        const model = await this.models.Post.edit(frame.data.posts[0], frame.options);
+        const filePaths = PostsService.getFileDetailsFromLexical(frame.data.posts[0].lexical).map(
+            fileDetails => fileDetails.path
+        );
+
+        const files = await this.models.File.findAll({
+            where: builder => builder.whereIn('path', filePaths)
+        });
+
+        const model = await this.models.Post.edit({
+            ...frame.data.posts[0],
+            files: files
+        }, frame.options);
 
         /**Handle newsletter email */
         if (model.get('newsletter_id')) {

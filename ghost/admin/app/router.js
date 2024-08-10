@@ -83,6 +83,8 @@ Router.map(function () {
     this.route('member', {path: '/members/:member_id'});
     this.route('members-activity');
 
+    this.route('files');
+
     // this.route('offers');
 
     // this.route('offer.new', {path: '/offers/new'});

@@ -44,6 +44,7 @@
 @import "components/filter-builder.css";
 @import "components/theme-errors.css";
 @import "components/modal-about.css";
+@import "components/boxes.css";
 
 
 /* Layouts
@@ -67,6 +68,7 @@
 @import "layouts/tiers.css";
 @import "layouts/offers.css";
 @import "layouts/explore.css";
+@import "layouts/files.css";
 
 :root {
     /* Primary colours */
@@ -1435,4 +1437,12 @@ Onboarding checklist: Share publication modal */
 
 .gh-sidebar-banner.gh-error-banner {
     background: var(--lightgrey-d1);
+}
+
+.gh-box-item {
+    border-color: var(--hairline-color-1);
+}
+
+.gh-box-item-image, .gh-box-item-other {
+    background-color: black;
 }

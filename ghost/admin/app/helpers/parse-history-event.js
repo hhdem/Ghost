@@ -142,6 +142,15 @@ function getLinkTarget(ev) {
                 route: 'settings.staff.user',
                 models: [ev.resource.slug]
             };
+        case 'file':
+            if (!ev.resource) {
+                return null;
+            }
+
+            return {
+                route: 'file',
+                models: [ev.resource.id]
+            };
         }
     }
 

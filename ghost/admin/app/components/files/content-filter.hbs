@@ -1,0 +1,19 @@
+<div class="gh-contentfilter view-actions-bottom-row" ...attributes>
+
+    <div class="gh-contentfilter-menu gh-contentfilter-type {{if @selectedType.value "gh-contentfilter-selected"}}" data-test-type-select="true">
+        <PowerSelect
+            @selected={{@selectedType}}
+            @options={{@availableTypes}}
+            @searchEnabled={{false}}
+            @onChange={{@onTypeChange}}
+            @triggerComponent={{component "gh-power-select/trigger"}}
+            @triggerClass="gh-contentfilter-menu-trigger"
+            @dropdownClass="gh-contentfilter-menu-dropdown"
+            @matchTriggerWidth={{false}}
+            as |type|
+        >
+            {{#if type.name}}{{type.name}}{{else}}<span class="red">Unknown type</span>{{/if}}
+        </PowerSelect>
+    </div>
+
+</div>

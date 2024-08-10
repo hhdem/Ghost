@@ -1,0 +1,50 @@
+<section class="gh-canvas gh-canvas-sticky">
+    <GhCanvasHeader class="gh-canvas-header sticky">
+        <h2 class="gh-canvas-title" data-test-screen-title>Files</h2>
+
+        <section class="view-actions">
+            <Files::ContentFilter
+                @selectedType={{this.selectedType}}
+                @availableTypes={{this.availableTypes}}
+                @onTypeChange={{this.changeType}}
+            />
+        </section>
+    </GhCanvasHeader>
+
+    <section class="view-container content-list">
+        <div class="gh-boxes {{unless this.filesInfinityModel "no-posts"}}">
+            {{#if this.filesInfinityModel}}
+                {{#each this.filesInfinityModel as |file|}}
+                    <Files::BoxItem
+                        @file={{file}}
+                        @openDeleteFileModal={{this.openDeleteFileModal}}
+                        @openEditFileModal={{this.openEditFileModal}}
+                        data-test-file={{file.id}}
+                    />
+                {{/each}}
+            {{else}}
+                <li class="no-posts-box" data-test-no-posts-box>
+                    <div class="no-posts tc">
+                        {{#if this.showingAll}}
+                            {{svg-jar "folder" class="gh-files-placeholder"}}
+                            <h4>Manage your images and files like a breeze.</h4>
+                            <p>Upload amazing files in your pages and posts,<br/>then come back here to manage them all.</p>
+                        {{else}}
+                            <h4>No files match the current filter</h4>
+                            <LinkTo @route="files" @query={{hash type=null}} class="gh-btn" data-test-link="show-all">
+                                <span>Show all files</span>
+                            </LinkTo>
+                        {{/if}}
+                    </div>
+                </li>
+            {{/if}}
+        </div>
+    </section>
+
+    <GhInfinityLoader
+        @infinityModel={{this.filesInfinityModel}}
+        @scrollable=".gh-main"
+        @triggerOffset={{1000}} />
+</section>
+
+{{outlet}}

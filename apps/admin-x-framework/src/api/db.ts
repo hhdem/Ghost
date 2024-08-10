@@ -17,3 +17,5 @@ export const useDeleteAllContent = createMutation<unknown, null>({
 });
 
 export const downloadAllContent = () => downloadFromEndpoint('/db/');
+
+export const downloadAllFiles = () => downloadFromEndpoint('/files/export/');

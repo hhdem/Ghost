@@ -170,12 +170,25 @@ class LocalStorageBase extends StorageBase {
     }
 
     /**
-     * @param {String} filePath
+     * @param {String} fileName
+     * @param {String} targetDir
      * @returns {Promise.<*>}
      */
     async delete(fileName, targetDir) {
-        const filePath = path.join(targetDir, fileName);
+        const filePath = path.join(targetDir || this.storagePath, fileName);
         return await fs.remove(filePath);
+    }
+
+    /**
+     * @param {Array<Array<String>>} files // eg: [[filePath1, fileDir1], [filePath2, fileDir2]]
+     * @returns {Promise.<Array<*>>}
+     */
+    async deleteAll(files) {
+        return await Promise.all(
+            files.map(([fileName, targetDir]) => {
+                return this.delete(fileName, targetDir);
+            })
+        );
     }
 
     /**
@@ -219,6 +232,19 @@ class LocalStorageBase extends StorageBase {
                 resolve(bytes);
             });
         });
+    }
+
+    /**
+     * @param {String} fileName
+     * @param {String} targetDir
+     * @returns {Promise.<number>}
+     */
+    async size(fileName, targetDir) {
+        const filePath = path.join(targetDir || this.storagePath, fileName);
+
+        return await fs.stat(filePath)
+            .then(stats => stats.size)
+            .catch(() => 0);
     }
 }
 

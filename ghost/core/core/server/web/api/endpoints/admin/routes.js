@@ -289,6 +289,9 @@ module.exports = function apiRoutes() {
         apiMw.upload.single('file'),
         http(api.files.upload)
     );
+    router.get('/files', mw.authAdminApi, http(api.files.browse));
+    router.del('/files/:id', mw.authAdminApi, http(api.files.destroy));
+    router.get('/files/export', mw.authAdminApi, http(api.files.exportFiles));
 
     // ## Invites
     router.get('/invites', mw.authAdminApi, http(api.invites.browse));

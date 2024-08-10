@@ -1,0 +1,51 @@
+<div class="gh-box-item" tabindex="0" ...attributes>
+    <div class="gh-box-item-header">
+        <div class="gh-badge gh-badge-opaque {{if @file.isMedia 'gh-badge-blue'}} {{if @file.isFile 'gh-badge-red'}}">
+            {{@file.type}}
+        </div>
+
+        <a href="{{@file.path}}" target="_blank" rel="noopener noreferrer">
+            {{svg-jar "external"}}
+        </a>
+    </div>
+
+    {{#if @file.isImage}}
+        <div class="gh-box-item-image">
+            <img src="{{@file.thumbnail}}" alt="{{@file.name}}"/>
+        </div>
+    {{else}}
+        <div class="gh-box-item-other">
+            <div>
+                {{svg-jar "folder"}}
+                {{@file.type}}
+            </div>
+
+            {{#if @file.isMedia}}
+                <video controls>
+                    <track kind="captions" />
+                    <track kind="descriptions" />
+
+                    <source src="{{@file.path}}"/>
+                </video>
+            {{/if}}
+        </div>
+    {{/if}}
+
+    <div class="gh-box-item-footer">
+        <div>
+            <strong class="f6 black">{{@file.name}}</strong>
+
+            <div class="black">{{@file.sizeInKbytes}}KB - {{gh-pluralize @file.count.posts "post"}}</div>
+        </div>
+
+        <div class="gh-box-item-actions">
+            {{!-- <button type="button" class="gh-btn gh-btn-icon" {{on "click" (fn @openEditFileModal @file)}} data-test-button="edit-file">
+                <span>{{svg-jar "pen"}} Edit</span>
+            </button> --}}
+
+            <button type="button" class="gh-box-item-delete-button gh-btn gh-btn-red gh-btn-icon" {{on "click" (fn @openDeleteFileModal @file)}} data-test-button="delete-file">
+                <span>{{svg-jar "trash"}}</span>
+            </button>
+        </div>
+    </div>
+</div>

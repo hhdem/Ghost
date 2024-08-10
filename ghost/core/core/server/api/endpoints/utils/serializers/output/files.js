@@ -16,6 +16,10 @@ function getURL(urlPath) {
 }
 
 module.exports = {
+    exportFiles(data, apiConfig, frame) {
+        frame.response = data;
+    },
+    
     upload({filePath}, apiConfig, frame) {
         return frame.response = {
             files: [{
@@ -25,3 +29,4 @@ module.exports = {
         };
     }
 };
+

@@ -16,7 +16,8 @@ const allowedIncludes = [
     'count.positive_feedback',
     'count.negative_feedback',
     'post_revisions',
-    'post_revisions.author'
+    'post_revisions.author',
+    'files'
 ];
 const unsafeAttrs = ['status', 'authors', 'visibility'];
 
