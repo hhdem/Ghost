@@ -13,11 +13,13 @@
         }
     },
     "database": {
-        "client": "sqlite3",
+        "client": "mysql",
         "connection": {
-            "filename": "content/data/ghost-dev.db"
-        },
-        "debug": false
+            "host"     : "127.0.0.1",
+            "user"     : "root",
+            "password" : "123456",
+            "database" : "ghost"
+        }
     },
     "paths": {
         "contentPath": "content/"

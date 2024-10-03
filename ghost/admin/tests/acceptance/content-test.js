@@ -1,4 +1,6 @@
 import ctrlOrCmd from 'ghost-admin/utils/ctrl-or-cmd';
+import sinon from 'sinon';
+import windowProxy from 'ghost-admin/utils/window-proxy';
 import {authenticateSession, invalidateSession} from 'ember-simple-auth/test-support';
 import {beforeEach, describe, it} from 'mocha';
 import {blur, click, currentURL, fillIn, find, findAll, triggerEvent, triggerKeyEvent, visit} from '@ember/test-helpers';
@@ -8,9 +10,9 @@ import {setupApplicationTest} from 'ember-mocha';
 import {setupMirage} from 'ember-cli-mirage/test-support';
 
 /**
- * 
- * @param {string} text 
- * @param {NodeList} buttons 
+ *
+ * @param {string} text
+ * @param {NodeList} buttons
  * @returns Node
  */
 const findButton = (text, buttons) => {
@@ -27,10 +29,14 @@ describe('Acceptance: Posts / Pages', function () {
         this.server.loadFixtures('configs');
     });
 
+    this.afterEach(function () {
+        sinon.restore();
+    });
+
     describe('posts', function () {
         it('redirects to signin when not authenticated', async function () {
             await invalidateSession();
-    
+
             await visit('/posts');
             expect(currentURL()).to.equal('/signin');
         });
@@ -40,7 +46,7 @@ describe('Acceptance: Posts / Pages', function () {
                 let contributorRole = this.server.create('role', {name: 'Contributor'});
                 this.server.create('user', {roles: [contributorRole]});
 
-                return await authenticateSession();
+                await authenticateSession();
             });
 
             // NOTE: This test seems to fail if run AFTER the 'can change access' test in the 'as admin' section; router seems to fail, did not look into it further
@@ -51,14 +57,14 @@ describe('Acceptance: Posts / Pages', function () {
                 expect(findAll('[data-test-post-id]')).to.have.length(0);
                 expect(find('[data-test-no-posts-box]')).to.exist;
                 expect(find('[data-test-link="write-a-new-post"]')).to.exist;
-                
+
                 await click('[data-test-link="write-a-new-post"]');
-                
+
                 expect(currentURL()).to.equal('/editor/post');
-                
+
                 await fillIn('[data-test-editor-title-input]', 'First contributor post');
                 await blur('[data-test-editor-title-input]');
-                
+
                 expect(currentURL()).to.equal('/editor/post/1');
 
                 await click('[data-test-link="posts"]');
@@ -81,7 +87,7 @@ describe('Acceptance: Posts / Pages', function () {
                 authorPost = this.server.create('post', {authors: [author], status: 'published', title: 'Author Post'});
                 this.server.create('post', {authors: [admin], status: 'scheduled', title: 'Admin Post'});
 
-                return await authenticateSession();
+                await authenticateSession();
             });
 
             it('only fetches the author\'s posts', async function () {
@@ -103,6 +109,9 @@ describe('Acceptance: Posts / Pages', function () {
             let admin, editor, publishedPost, scheduledPost, draftPost, authorPost;
 
             beforeEach(async function () {
+                this.server.loadFixtures('settings');
+                this.server.loadFixtures('tiers');
+
                 let adminRole = this.server.create('role', {name: 'Administrator'});
                 admin = this.server.create('user', {roles: [adminRole]});
                 let editorRole = this.server.create('role', {name: 'Editor'});
@@ -116,7 +125,7 @@ describe('Acceptance: Posts / Pages', function () {
                 // pages shouldn't appear in the list
                 this.server.create('page', {authors: [admin], status: 'published', title: 'Published Page'});
 
-                return await authenticateSession();
+                await authenticateSession();
             });
 
             describe('displays and filter posts', function () {
@@ -132,7 +141,7 @@ describe('Acceptance: Posts / Pages', function () {
                     expect(posts[1].querySelector('.gh-content-entry-title').textContent, 'post 2 title').to.contain('Draft Post');
                     expect(posts[2].querySelector('.gh-content-entry-title').textContent, 'post 3 title').to.contain('Published Post');
                     expect(posts[3].querySelector('.gh-content-entry-title').textContent, 'post 4 title').to.contain('Editor Published Post');
-                    
+
                     // check API requests
                     let lastRequests = this.server.pretender.handledRequests.filter(request => request.url.includes('/posts/'));
                     expect(lastRequests[0].queryParams.filter, 'scheduled request filter').to.have.string('status:scheduled');
@@ -152,10 +161,10 @@ describe('Acceptance: Posts / Pages', function () {
                     // Displays draft post
                     expect(findAll('[data-test-post-id]').length, 'drafts count').to.equal(1);
                     expect(find(`[data-test-post-id="${draftPost.id}"]`), 'draft post').to.exist;
-        
+
                     // show published posts
                     await selectChoose('[data-test-type-select]', 'Published posts');
-        
+
                     // API request is correct
                     [lastRequest] = this.server.pretender.handledRequests.slice(-1);
                     expect(lastRequest.queryParams.filter, '"published" request status filter').to.have.string('status:published');
@@ -163,10 +172,10 @@ describe('Acceptance: Posts / Pages', function () {
                     expect(findAll('[data-test-post-id]').length, 'published count').to.equal(2);
                     expect(find(`[data-test-post-id="${publishedPost.id}"]`), 'admin published post').to.exist;
                     expect(find(`[data-test-post-id="${authorPost.id}"]`), 'author published post').to.exist;
-        
+
                     // show scheduled posts
                     await selectChoose('[data-test-type-select]', 'Scheduled posts');
-        
+
                     // API request is correct
                     [lastRequest] = this.server.pretender.handledRequests.slice(-1);
                     expect(lastRequest.queryParams.filter, '"scheduled" request status filter').to.have.string('status:scheduled');
@@ -201,7 +210,7 @@ describe('Acceptance: Posts / Pages', function () {
                         .to.have.string('visibility:[paid,tiers]');
                     let posts = findAll('[data-test-post-id]');
                     expect(posts.length, 'all posts count').to.equal(1);
-                
+
                     await selectChoose('[data-test-visibility-select]', 'Public');
                     [lastRequest] = this.server.pretender.handledRequests.slice(-1);
                     expect(lastRequest.queryParams.allFilter, '"visibility" request filter param')
@@ -250,20 +259,90 @@ describe('Acceptance: Posts / Pages', function () {
                         let buttons = contextMenu.querySelectorAll('button');
 
                         expect(contextMenu, 'context menu').to.exist;
-                        expect(buttons.length, 'context menu buttons').to.equal(5);
-                        expect(buttons[0].innerText.trim(), 'context menu button 1').to.contain('Unpublish');
-                        expect(buttons[1].innerText.trim(), 'context menu button 2').to.contain('Feature'); // or Unfeature
-                        expect(buttons[2].innerText.trim(), 'context menu button 3').to.contain('Add a tag');
-                        expect(buttons[3].innerText.trim(), 'context menu button 4').to.contain('Duplicate');
-                        expect(buttons[4].innerText.trim(), 'context menu button 5').to.contain('Delete');
+                        expect(buttons.length, 'context menu buttons').to.equal(6);
+                        expect(buttons[0].innerText.trim(), 'context menu button 1').to.contain('Copy link to post');
+                        expect(buttons[1].innerText.trim(), 'context menu button 1').to.contain('Unpublish');
+                        expect(buttons[2].innerText.trim(), 'context menu button 2').to.contain('Feature'); // or Unfeature
+                        expect(buttons[3].innerText.trim(), 'context menu button 3').to.contain('Add a tag');
+                        expect(buttons[4].innerText.trim(), 'context menu button 4').to.contain('Duplicate');
+                        expect(buttons[5].innerText.trim(), 'context menu button 5').to.contain('Delete');
 
                         // duplicate the post
-                        await click(buttons[3]);
+                        await click(buttons[4]);
 
                         const posts = findAll('[data-test-post-id]');
                         expect(posts.length, 'all posts count').to.equal(5);
                         let [lastRequest] = this.server.pretender.handledRequests.slice(-1);
                         expect(lastRequest.url, 'request url').to.match(new RegExp(`/posts/${publishedPost.id}/copy/`));
+                    });
+
+                    it('can copy a post link', async function () {
+                        sinon.stub(navigator.clipboard, 'writeText').resolves();
+
+                        await visit('/posts');
+
+                        // get the post
+                        const post = find(`[data-test-post-id="${publishedPost.id}"]`);
+                        expect(post, 'post').to.exist;
+
+                        await triggerEvent(post, 'contextmenu');
+
+                        let contextMenu = find('.gh-posts-context-menu'); // this is a <ul> element
+
+                        let buttons = contextMenu.querySelectorAll('button');
+
+                        expect(contextMenu, 'context menu').to.exist;
+                        expect(buttons.length, 'context menu buttons').to.equal(6);
+                        expect(buttons[0].innerText.trim(), 'context menu button 1').to.contain('Copy link to post');
+                        expect(buttons[1].innerText.trim(), 'context menu button 1').to.contain('Unpublish');
+                        expect(buttons[2].innerText.trim(), 'context menu button 2').to.contain('Feature'); // or Unfeature
+                        expect(buttons[3].innerText.trim(), 'context menu button 3').to.contain('Add a tag');
+                        expect(buttons[4].innerText.trim(), 'context menu button 4').to.contain('Duplicate');
+                        expect(buttons[5].innerText.trim(), 'context menu button 5').to.contain('Delete');
+
+                        // Copy the post link
+                        await click(buttons[0]);
+
+                        // Check that the notification is displayed
+                        expect(find('[data-test-text="notification-content"]')).to.contain.text('Post link copied');
+
+                        // Check that the clipboard contains the right content
+                        expect(navigator.clipboard.writeText.calledOnce).to.be.true;
+                        expect(navigator.clipboard.writeText.firstCall.args[0]).to.equal(`http://localhost:4200/${publishedPost.slug}/`);
+                    });
+
+                    it('can copy a preview link', async function () {
+                        sinon.stub(navigator.clipboard, 'writeText').resolves();
+
+                        await visit('/posts');
+
+                        // get the post
+                        const post = find(`[data-test-post-id="${draftPost.id}"]`);
+                        expect(post, 'post').to.exist;
+
+                        await triggerEvent(post, 'contextmenu');
+
+                        let contextMenu = find('.gh-posts-context-menu'); // this is a <ul> element
+
+                        let buttons = contextMenu.querySelectorAll('button');
+
+                        expect(contextMenu, 'context menu').to.exist;
+                        expect(buttons.length, 'context menu buttons').to.equal(5);
+                        expect(buttons[0].innerText.trim(), 'context menu button 1').to.contain('Copy preview link');
+                        expect(buttons[1].innerText.trim(), 'context menu button 2').to.contain('Feature'); // or Unfeature
+                        expect(buttons[2].innerText.trim(), 'context menu button 3').to.contain('Add a tag');
+                        expect(buttons[3].innerText.trim(), 'context menu button 4').to.contain('Duplicate');
+                        expect(buttons[4].innerText.trim(), 'context menu button 5').to.contain('Delete');
+
+                        // Copy the preview link
+                        await click(buttons[0]);
+
+                        // Check that the notification is displayed
+                        expect(find('[data-test-text="notification-content"]')).to.contain.text('Preview link copied');
+
+                        // Check that the clipboard contains the right content
+                        expect(navigator.clipboard.writeText.calledOnce).to.be.true;
+                        expect(navigator.clipboard.writeText.firstCall.args[0]).to.equal(`http://localhost:4200/p/${draftPost.uuid}/`);
                     });
                 });
 
@@ -301,7 +380,7 @@ describe('Acceptance: Posts / Pages', function () {
                         let [lastRequest] = this.server.pretender.handledRequests.slice(-1);
                         expect(lastRequest.queryParams.filter, 'feature request id').to.equal(`id:['${publishedPost.id}','${authorPost.id}']`);
                         expect(JSON.parse(lastRequest.requestBody).bulk.action, 'feature request action').to.equal('feature');
-                        
+
                         // ensure ui shows these are now featured
                         expect(postThreeContainer.querySelector('.gh-featured-post'), 'postFour featured').to.exist;
                         expect(postFourContainer.querySelector('.gh-featured-post'), 'postFour featured').to.exist;
@@ -356,7 +435,7 @@ describe('Acceptance: Posts / Pages', function () {
                         let addTagButton = findButton('Add a tag', buttons);
                         expect(addTagButton, 'add tag button').to.exist;
                         await click(addTagButton);
-                        
+
                         const addTagsModal = find('[data-test-modal="add-tags"]');
                         expect(addTagsModal, 'tag settings modal').to.exist;
 
@@ -365,52 +444,57 @@ describe('Acceptance: Posts / Pages', function () {
                         await fillIn(input, 'test-tag');
                         await triggerKeyEvent(input, 'keydown', 13);
                         await click('[data-test-button="confirm"]');
-                        
+
                         // API request is correct - note, we don't mock the actual model updates
                         let [lastRequest] = this.server.pretender.handledRequests.slice(-2);
                         expect(lastRequest.queryParams.filter, 'add tag request id').to.equal(`id:['${publishedPost.id}','${authorPost.id}']`);
                         expect(JSON.parse(lastRequest.requestBody).bulk.action, 'add tag request action').to.equal('addTag');
                     });
-                    
-                    // TODO: Skip for now. This causes the member creation test to fail ('New member' text doesn't show... ???).
-                    it.skip('can change access', async function () {
+
+                    it('cannot change access when members is disabled', async function () {
                         await visit('/posts');
+
+                        const settingsService = this.owner.lookup('service:settings');
+                        await settingsService.set('membersEnabled', false);
 
                         // get all posts
                         const posts = findAll('[data-test-post-id]');
                         expect(posts.length, 'all posts count').to.equal(4);
 
-                        const postThreeContainer = posts[2].parentElement; // draft post
-                        const postFourContainer = posts[3].parentElement; // published post
+                        const postThreeContainer = posts[2].parentElement; // published post
+                        const postFourContainer = posts[3].parentElement; // author post
+
+                        await click(postThreeContainer, {metaKey: ctrlOrCmd === 'command', ctrlKey: ctrlOrCmd === 'ctrl'});
+                        await click(postFourContainer, {metaKey: ctrlOrCmd === 'command', ctrlKey: ctrlOrCmd === 'ctrl'});
+                        await triggerEvent(postFourContainer, 'contextmenu');
+
+                        expect(find('[data-test-post-context-menu]'), 'context menu').to.exist;
+                        expect(find('[data-test-post-context-menu] [data-test-button="change-access"]'), 'change access button').not.to.exist;
+                    });
+
+                    it('can change access', async function () {
+                        await visit('/posts');
+
+                        const settingsService = this.owner.lookup('service:settings');
+                        await settingsService.set('membersEnabled', true);
+
+                        let posts = findAll('[data-test-post-id]');
+                        let postThreeContainer = posts[2].parentElement; // published post
+                        let postFourContainer = posts[3].parentElement; // author post
 
                         await click(postThreeContainer, {metaKey: ctrlOrCmd === 'command', ctrlKey: ctrlOrCmd === 'ctrl'});
                         await click(postFourContainer, {metaKey: ctrlOrCmd === 'command', ctrlKey: ctrlOrCmd === 'ctrl'});
 
-                        expect(postFourContainer.getAttribute('data-selected'), 'postFour selected').to.exist;
-                        expect(postThreeContainer.getAttribute('data-selected'), 'postThree selected').to.exist;
-
                         await triggerEvent(postFourContainer, 'contextmenu');
+
                         let contextMenu = find('.gh-posts-context-menu'); // this is a <ul> element
-                        expect(contextMenu, 'context menu').to.exist;
                         let buttons = contextMenu.querySelectorAll('button');
                         let changeAccessButton = findButton('Change access', buttons);
-                        
-                        expect(changeAccessButton, 'change access button').not.to.exist;
-                        
-                        const settingsService = this.owner.lookup('service:settings');
-                        await settingsService.set('membersEnabled', true);
 
-                        await triggerEvent(postFourContainer, 'contextmenu');
-                        contextMenu = find('.gh-posts-context-menu'); // this is a <ul> element
-                        expect(contextMenu, 'context menu').to.exist;
-                        buttons = contextMenu.querySelectorAll('button');
-                        changeAccessButton = findButton('Change access', buttons);
-
-                        expect(changeAccessButton, 'change access button').to.exist;
                         await click(changeAccessButton);
 
-                        const changeAccessModal = find('[data-test-modal="edit-posts-access"]');
-                        const selectElement = changeAccessModal.querySelector('select');
+                        let changeAccessModal = find('[data-test-modal="edit-posts-access"]');
+                        let selectElement = changeAccessModal.querySelector('select');
                         await fillIn(selectElement, 'members');
                         await click('[data-test-button="confirm"]');
 
@@ -418,6 +502,66 @@ describe('Acceptance: Posts / Pages', function () {
                         let [lastRequest] = this.server.pretender.handledRequests.slice(-1);
                         expect(lastRequest.queryParams.filter, 'change access request id').to.equal(`id:['${publishedPost.id}','${authorPost.id}']`);
                         expect(JSON.parse(lastRequest.requestBody).bulk.action, 'change access request action').to.equal('access');
+
+                        // ensure modal matches the new state when accessed again
+                        // NOTE: we only show the selected visibility/tiers state for single selections
+                        await click(postThreeContainer, {metaKey: ctrlOrCmd === 'command', ctrlKey: ctrlOrCmd === 'ctrl'});
+                        postFourContainer = findAll('[data-test-post-id]')[3].parentElement; // published post
+                        await triggerEvent(postFourContainer, 'contextmenu');
+                        contextMenu = find('.gh-posts-context-menu'); // this is a <ul> element
+                        buttons = contextMenu.querySelectorAll('button');
+                        changeAccessButton = findButton('Change access', buttons);
+                        await click(changeAccessButton);
+                        changeAccessModal = find('[data-test-modal="edit-posts-access"]');
+                        selectElement = changeAccessModal.querySelector('select');
+                        expect(selectElement, 'access select value after changing').to.have.value('members');
+                        await click(changeAccessModal.querySelector('[data-test-button="cancel"]'));
+
+                        // ensure creating new posts still works
+                        // (we had a bug where newly created records in the store had `isNew: false` set meaning any saves failed
+                        // because Ember Data attempted a PUT with no id)
+                        sinon.stub(windowProxy, 'reload'); // we had a force-reload in place to workaround the bug
+                        await visit('/editor/post');
+                        await fillIn('[data-test-editor-title-input]', 'New post');
+                        await blur('[data-test-editor-title-input]');
+                        expect(this.server.db.posts.length, 'posts count after new post save').to.equal(5);
+                    });
+
+                    it('can change access with custom tiers', async function () {
+                        await visit('/posts');
+
+                        const settingsService = this.owner.lookup('service:settings');
+                        await settingsService.set('membersEnabled', true);
+
+                        const postContainer = findAll('[data-test-post-id]')[2].parentElement; // published post
+                        await triggerEvent(postContainer, 'contextmenu');
+                        await click('[data-test-post-context-menu] [data-test-button="change-access"]');
+
+                        const modalSelector = '[data-test-modal="edit-posts-access"]';
+                        const tiersSelector = `${modalSelector} [data-test-visibility-segment-select]`;
+
+                        expect(find(tiersSelector)).not.to.exist;
+                        await fillIn(`${modalSelector} select`, 'tiers');
+                        expect(find(tiersSelector)).to.exist;
+                        expect(findAll(`${tiersSelector} [data-test-visibility-segment-option]`)).to.have.length(0);
+
+                        await clickTrigger(tiersSelector);
+                        await selectChoose(tiersSelector, 'Default Tier');
+                        await click(`${modalSelector} [data-test-button="confirm"]`);
+
+                        // check API request
+                        let [lastRequest] = this.server.pretender.handledRequests.slice(-1);
+                        expect(lastRequest.queryParams.filter, 'change access request id').to.equal(`id:['${publishedPost.id}']`);
+                        expect(JSON.parse(lastRequest.requestBody).bulk.action, 'change access request action').to.equal('access');
+                        expect(JSON.parse(lastRequest.requestBody).bulk.meta.visibility, 'change access request visibility').to.equal('tiers');
+                        expect(JSON.parse(lastRequest.requestBody).bulk.meta.tiers[0].id, 'change access request tier').to.equal(this.server.schema.tiers.findBy({slug: 'default-tier'}).id);
+
+                        // check correct data is shown when re-accessing change access modal
+                        await triggerEvent(postContainer, 'contextmenu');
+                        await click('[data-test-post-context-menu] [data-test-button="change-access"]');
+                        expect(find(`${modalSelector} select`).value).to.equal('tiers');
+                        expect(findAll(`${tiersSelector} [data-test-visibility-segment-option]`)).to.have.length(1);
+                        expect(find(`${tiersSelector} [data-test-visibility-segment-option]`).textContent.trim()).to.equal('Default Tier');
                     });
 
                     it('can unpublish', async function () {
@@ -464,6 +608,46 @@ describe('Acceptance: Posts / Pages', function () {
                         expect(postFourContainer.querySelector('.gh-content-entry-status').textContent, 'postThree status').to.contain('Draft');
                     });
 
+                    it('can unschedule', async function () {
+                        await visit('/posts');
+
+                        // get all posts
+                        const posts = findAll('[data-test-post-id]');
+                        expect(posts.length, 'all posts count').to.equal(4);
+
+                        const postOneContainer = posts[0].parentElement; // scheduled post
+
+                        await click(postOneContainer, {metaKey: ctrlOrCmd === 'command', ctrlKey: ctrlOrCmd === 'ctrl'});
+
+                        expect(postOneContainer.getAttribute('data-selected'), 'postOne selected').to.exist;
+
+                        // NOTE: right clicks don't seem to work in these tests
+                        //  contextmenu is the event triggered - https://developer.mozilla.org/en-US/docs/Web/API/Element/contextmenu_event
+                        await triggerEvent(postOneContainer, 'contextmenu');
+
+                        let contextMenu = find('.gh-posts-context-menu'); // this is a <ul> element
+                        expect(contextMenu, 'context menu').to.exist;
+
+                        // unschedule the post
+                        let buttons = contextMenu.querySelectorAll('button');
+                        let unscheduleButton = findButton('Unschedule', buttons);
+                        expect(unscheduleButton, 'unschedule button').to.exist;
+                        await click(unscheduleButton);
+
+                        // handle modal
+                        const modal = find('[data-test-modal="unschedule-posts"]');
+                        expect(modal, 'unschedule modal').to.exist;
+                        await click('[data-test-button="confirm"]');
+
+                        // API request is correct - note, we don't mock the actual model updates
+                        let [lastRequest] = this.server.pretender.handledRequests.slice(-1);
+                        expect(lastRequest.queryParams.filter, 'unschedule request id').to.equal(`id:['${scheduledPost.id}']`);
+                        expect(JSON.parse(lastRequest.requestBody).bulk.action, 'unschedule request action').to.equal('unschedule');
+
+                        // ensure ui shows these are now unpublished
+                        expect(postOneContainer.querySelector('.gh-content-entry-status').textContent, 'postOne status').to.contain('Draft');
+                    });
+
                     it('can delete', async function () {
                         await visit('/posts');
 
@@ -497,7 +681,7 @@ describe('Acceptance: Posts / Pages', function () {
                         const modal = find('[data-test-modal="delete-posts"]');
                         expect(modal, 'delete modal').to.exist;
                         await click('[data-test-button="confirm"]');
-                        
+
                         // API request is correct - note, we don't mock the actual model updates
                         let [lastRequest] = this.server.pretender.handledRequests.slice(-1);
                         expect(lastRequest.queryParams.filter, 'delete request id').to.equal(`id:['${publishedPost.id}','${authorPost.id}']`);
@@ -549,7 +733,7 @@ describe('Acceptance: Posts / Pages', function () {
             });
 
             it('can navigate to custom views', async function () {
-                this.server.create('setting', {
+                this.server.schema.settings.findBy({key: 'shared_views'}).update({
                     group: 'site',
                     key: 'shared_views',
                     value: JSON.stringify([{
@@ -564,13 +748,13 @@ describe('Acceptance: Posts / Pages', function () {
                 await visit('/posts');
 
                 // nav bar contains default + custom views
-                expect(find('[data-test-nav-custom="posts-Drafts"]')).to.exist;
-                expect(find('[data-test-nav-custom="posts-Scheduled"]')).to.exist;
-                expect(find('[data-test-nav-custom="posts-Published"]')).to.exist;
-                expect(find('[data-test-nav-custom="posts-My posts"]')).to.exist;
+                expect(find('[data-test-nav-custom="posts-Drafts"]'), 'drafts nav').to.exist;
+                expect(find('[data-test-nav-custom="posts-Scheduled"]'), 'scheduled nav').to.exist;
+                expect(find('[data-test-nav-custom="posts-Published"]'), 'published nav').to.exist;
+                expect(find('[data-test-nav-custom="posts-My posts"]'), 'my posts nav').to.exist;
 
                 // screen has default title and sidebar is showing inactive custom view
-                expect(find('[data-test-screen-title]')).to.have.rendered.text('Posts');
+                expect(find('[data-test-screen-title]')).to.have.rendered.trimmed.text('Posts');
                 expect(find('[data-test-nav="posts"]')).to.have.class('active');
 
                 // clicking sidebar custom view link works
@@ -582,7 +766,7 @@ describe('Acceptance: Posts / Pages', function () {
                 // clicking the main posts link resets
                 await click('[data-test-nav="posts"]');
                 expect(currentURL()).to.equal('/posts');
-                expect(find('[data-test-screen-title]')).to.have.rendered.text('Posts');
+                expect(find('[data-test-screen-title]')).to.have.rendered.trimmed.text('Posts');
                 expect(find('[data-test-nav-custom="posts-Scheduled"]')).to.not.have.class('active');
 
                 // changing a filter to match a custom view shows custom view
@@ -619,7 +803,7 @@ describe('Acceptance: Posts / Pages', function () {
                 this.server.create('page', {authors: [admin], status: 'draft', title: 'Draft Page'});
                 this.server.create('page', {authors: [admin], status: 'scheduled', title: 'Scheduled Page'});
 
-                return await authenticateSession();
+                await authenticateSession();
             });
 
             it('can view pages', async function () {
