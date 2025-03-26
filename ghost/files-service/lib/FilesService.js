@@ -3,6 +3,7 @@ const fs = require('fs-extra');
 const url = require('url');
 const path = require('path');
 const glob = require('glob');
+const {imageSize} = require('image-size');
 
 const {compress} = require('@tryghost/zip');
 const imageTransform = require('@tryghost/image-transform');
@@ -224,7 +225,19 @@ class FilesService {
             file.name = file.name.replace(/_o(\.\w+?)$/, '$1');
 
             let filePath = '';
-            let imageSize = file.sie;
+            let fileSize = file.size;
+
+            // Get original image dimensions using image-size
+            const dimensions = imageSize(file.path);
+            
+            // Calculate target dimensions if width > 800
+            let targetWidth = dimensions.width;
+            let targetHeight = dimensions.height;
+
+            if (dimensions.width > 800) {
+                targetWidth = 800;
+                targetHeight = Math.round((800 / dimensions.width) * dimensions.height);
+            }
 
             // CASE: image transform is not capable of transforming file (e.g. .gif)
             if (imageTransform.shouldResizeFileExtension(file.ext) && imageOptimizationOptions.resize) {
@@ -235,7 +248,8 @@ class FilesService {
                     in: originalPath,
                     out,
                     ext: file.ext,
-                    width: this.config.get('imageOptimization:defaultMaxWidth')
+                    width: targetWidth,
+                    height: targetHeight
                 }, imageOptimizationOptions);
 
                 try {
@@ -249,7 +263,7 @@ class FilesService {
                     });
                 }
 
-                // Store the processed/optimized image
+                // Store the processed/optimized image 
                 const processedImageUrl = await store.save({
                     ...file,
                     path: out
@@ -266,14 +280,13 @@ class FilesService {
 
                     // Get the path and name of the processed image
                     // We want to store the original image on the same name + _o
-                    // So we need to wait for the first store to finish before generating the name of the original image
                     processedImageName = path.basename(processedImagePath);
                     processedImageDir = path.dirname(processedImagePath);
                 }
 
                 // If the processed image was created, get it's size instead of the original size
                 // Currently size is not part of StorageBase, so not all storage provider have implemented it
-                imageSize = store.size ? await store.size(processedImageName, processedImageDir) : imageSize;
+                fileSize = store.size ? await store.size(processedImageName, processedImageDir) : fileSize;
 
                 // Store the original image
                 await store.save({
@@ -290,7 +303,7 @@ class FilesService {
                 type: 'images',
                 hash: fileHash,
                 path: filePath,
-                size: imageSize
+                size: fileSize
             }, options);
 
             return filePath;
