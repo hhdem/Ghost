@@ -11,8 +11,8 @@ import {inject as service} from '@ember/service';
 
 export const fileTypes = {
     image: {
-        mimeTypes: ['image/gif', 'image/jpg', 'image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'],
-        extensions: ['gif', 'jpg', 'jpeg', 'png', 'svg', 'svgz', 'webp'],
+        mimeTypes: ['image/gif', 'image/jpg', 'image/jpeg', 'image/png', 'image/svg+xml', 'image/webp', 'image/heic', 'image/heif'],
+        extensions: ['gif', 'jpg', 'jpeg', 'png', 'svg', 'svgz', 'webp', 'heic', 'heif'],
         endpoint: '/images/upload/',
         resourceName: 'images'
     },

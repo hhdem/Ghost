@@ -26,8 +26,8 @@
             "contentTypes": ["text/csv", "application/csv", "application/octet-stream", "application/vnd.ms-excel"]
         },
         "images": {
-            "extensions": [".jpg", ".jpeg", ".gif", ".png", ".svg", ".svgz", ".ico", ".webp"],
-            "contentTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon", "image/webp"]
+            "extensions": [".jpg", ".jpeg", ".gif", ".png", ".svg", ".svgz", ".ico", ".webp", ".heic", ".heif"],
+            "contentTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon", "image/webp", "image/heic", "image/heif"]
         },
         "media": {
             "extensions": [".mp4",".webm", ".ogv", ".mp3", ".wav", ".ogg", ".m4a"],
@@ -79,12 +79,12 @@
             ]
         },
         "thumbnails": {
-            "extensions": [".jpg", ".jpeg", ".gif", ".png", ".svg", ".svgz", ".ico", ".webp"],
-            "contentTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon", "image/webp"]
+            "extensions": [".jpg", ".jpeg", ".gif", ".png", ".svg", ".svgz", ".ico", ".webp", ".heic", ".heif"],
+            "contentTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon", "image/webp", "image/heic", "image/heif"]
         },
         "icons": {
-            "extensions": [".jpg", ".jpeg", ".gif", ".png", ".svg", ".svgz", ".ico", ".webp"],
-            "contentTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon", "image/webp"]
+            "extensions": [".jpg", ".jpeg", ".gif", ".png", ".svg", ".svgz", ".ico", ".webp", ".heic", ".heif"],
+            "contentTypes": ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon", "image/webp", "image/heic", "image/heif"]
         },
         "db": {
             "extensions": [".json", ".zip"],

@@ -227,8 +227,54 @@ class FilesService {
             let filePath = '';
             let fileSize = file.size;
 
+            // Handle HEIC/HEIF files - convert to JPG first
+            let processedFilePath = file.path;
+            let processedFileExt = file.ext;
+            let processedFileName = file.name;
+            
+            if (file.ext === '.heic' || file.ext === '.heif') {
+                try {
+                    // First try Sharp (faster but limited codec support)
+                    const sharp = require('sharp');
+                    const jpgPath = file.path.replace(/\.(heic|heif)$/i, '.jpg');
+                    const buffer = await fs.readFile(file.path);
+                    
+                    try {
+                        const jpgBuffer = await sharp(buffer).jpeg({quality: 90}).toBuffer();
+                        await fs.writeFile(jpgPath, jpgBuffer);
+                        
+                        // Update file properties for further processing
+                        processedFilePath = jpgPath;
+                        processedFileExt = '.jpg';
+                        processedFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+                    } catch (sharpError) {
+                        // Sharp failed, try heic-convert as fallback
+                        
+                        const heicConvert = require('heic-convert');
+                        const jpgBuffer = await heicConvert({
+                            buffer: buffer,
+                            format: 'JPEG',
+                            quality: 0.9
+                        });
+                        
+                        await fs.writeFile(jpgPath, jpgBuffer);
+                        
+                        // Update file properties for further processing
+                        processedFilePath = jpgPath;
+                        processedFileExt = '.jpg';
+                        processedFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+                    }
+                } catch (conversionError) {
+                    throw new errors.BadRequestError({
+                        message: 'HEIC conversion failed',
+                        context: `Both Sharp and heic-convert failed: ${conversionError.message}`,
+                        help: 'Please try with a different HEIC file or convert to JPG manually'
+                    });
+                }
+            }
+
             // Get original image dimensions using image-size
-            const dimensions = imageSize(file.path);
+            const dimensions = imageSize(processedFilePath);
             
             // Calculate target dimensions if width > 800
             let targetWidth = dimensions.width;
@@ -240,14 +286,14 @@ class FilesService {
             }
 
             // CASE: image transform is not capable of transforming file (e.g. .gif)
-            if (imageTransform.shouldResizeFileExtension(file.ext) && imageOptimizationOptions.resize) {
-                const out = `${file.path}_processed`;
-                const originalPath = file.path;
+            if (imageTransform.shouldResizeFileExtension(processedFileExt) && imageOptimizationOptions.resize) {
+                const out = `${processedFilePath}_processed`;
+                const originalPath = processedFilePath;
 
                 const fileOptions = Object.assign({
                     in: originalPath,
                     out,
-                    ext: file.ext,
+                    ext: processedFileExt,
                     width: targetWidth,
                     height: targetHeight
                 }, imageOptimizationOptions);
@@ -266,6 +312,8 @@ class FilesService {
                 // Store the processed/optimized image 
                 const processedImageUrl = await store.save({
                     ...file,
+                    name: processedFileName,
+                    ext: processedFileExt,
                     path: out
                 });
 
@@ -288,14 +336,21 @@ class FilesService {
                 // Currently size is not part of StorageBase, so not all storage provider have implemented it
                 fileSize = store.size ? await store.size(processedImageName, processedImageDir) : fileSize;
 
-                // Store the original image
+                // Store the original image (use converted path for HEIC files)
                 await store.save({
                     ...file,
+                    ext: processedFileExt,
                     path: originalPath,
                     name: imageTransform.generateOriginalImageName(processedImageName)
                 }, processedImageDir);
             } else {
-                filePath = await store.save(file);
+                // No processing needed, save the converted file directly
+                filePath = await store.save({
+                    ...file,
+                    name: processedFileName,
+                    ext: processedFileExt,
+                    path: processedFilePath
+                });
             }
 
             await this.models.File.add({
@@ -305,6 +360,15 @@ class FilesService {
                 path: filePath,
                 size: fileSize
             }, options);
+
+            // Clean up temporary converted file if it was created
+            if (file.ext === '.heic' || file.ext === '.heif') {
+                try {
+                    await fs.remove(processedFilePath);
+                } catch (cleanupError) {
+                    // Silently ignore cleanup errors
+                }
+            }
 
             return filePath;
         }
